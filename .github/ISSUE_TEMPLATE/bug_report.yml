@@ -1,0 +1,66 @@
+name: Bug report
+description: Something isn't working as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Parley is only tested on **WSL2 + Debian 12 with an NVIDIA GPU**, so the
+        environment details below really matter for reproducing your issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact command(s) you ran.
+      placeholder: |
+        1. make transcribe FILE="..." LANG=en
+        2. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - WSL2 + Debian 12
+        - WSL2 + other distro
+        - Native Linux
+        - macOS
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU
+      description: Model and VRAM, e.g. "RTX 3060 Ti, 8 GB". Put "none / CPU only" if no GPU.
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Output of `whisperx --version`, `python3 --version`, and `ffmpeg -version | head -1`.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Re-run with `VERBOSE=1` and paste the relevant output. This is automatically formatted as code.
+      render: shell
+    validations:
+      required: false

@@ -1,0 +1,4 @@
+# Not ours / not markdown we want reformatted
+node_modules/
+transcripts/
+*.bak

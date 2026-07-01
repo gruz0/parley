@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck (bash)
+        run: shellcheck lib.sh transcribe.sh transcribe-tracks.sh rename-speakers.sh doctor.sh setup.sh
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Prettier (markdown)
+        run: |
+          bun install --frozen-lockfile
+          bun run format:check
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Ruff (Python)
+        run: |
+          pip install ruff
+          ruff check .

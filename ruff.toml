@@ -1,0 +1,2 @@
+# Ruff configuration for the small amount of Python in this repo.
+line-length = 100

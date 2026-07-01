@@ -1,0 +1,11 @@
+.env
+transcripts/
+*.log
+node_modules/
+
+# Python / tooling caches
+__pycache__/
+.ruff_cache/
+
+# Claude Code personal settings (the shared .claude/settings.json IS committed)
+.claude/settings.local.json

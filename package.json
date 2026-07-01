@@ -1,0 +1,43 @@
+{
+  "name": "parley",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private, local, speaker-labeled transcripts of founder & investor calls",
+  "keywords": [
+    "whisper",
+    "whisperx",
+    "pyannote",
+    "speaker-diarization",
+    "ffmpeg",
+    "transcription",
+    "speech-to-text",
+    "audio-transcription",
+    "meeting-transcription",
+    "local-first",
+    "privacy-first",
+    "offline",
+    "on-device",
+    "speaker-labeling",
+    "transcript",
+    "founder-tools",
+    "call-recording",
+    "cli",
+    "shell",
+    "self-hosted"
+  ],
+  "homepage": "https://github.com/gruz0/parley#readme",
+  "bugs": "https://github.com/gruz0/parley/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gruz0/parley.git"
+  },
+  "license": "MIT",
+  "author": "gruz0 <kadyrov.dev@gmail.com>",
+  "scripts": {
+    "format": "prettier --write \"**/*.md\"",
+    "format:check": "prettier --check \"**/*.md\""
+  },
+  "devDependencies": {
+    "prettier": "^3.9.4"
+  }
+}
