@@ -46,7 +46,36 @@ set_quiet_args() {
 }
 
 # set_lang_args <lang> — populate LANG_ARG (empty lang = autodetect).
+# NB: ends with an explicit `return 0` — a trailing `[[ … ]] && …` would make the
+# function exit non-zero when the condition is false and abort callers under `set -e`.
 set_lang_args() {
   LANG_ARG=()
   [[ -n "${1:-}" ]] && LANG_ARG=(--language "$1")
+  return 0
+}
+
+# set_speaker_args <min> <max> — populate SPEAKER_ARGS for whisperx --diarize.
+# Empty min and max both omitted = let pyannote auto-detect the speaker count.
+set_speaker_args() {
+  SPEAKER_ARGS=()
+  [[ -n "${1:-}" ]] && SPEAKER_ARGS+=(--min_speakers "$1")
+  [[ -n "${2:-}" ]] && SPEAKER_ARGS+=(--max_speakers "$2")
+  return 0
+}
+
+# speaker_label <min> <max> — human-readable speaker count for status output
+# ("auto" when unbounded, "N" when min==max, "min-max" otherwise).
+speaker_label() {
+  if [[ -z "${1:-}" && -z "${2:-}" ]]; then
+    echo "auto"
+  elif [[ "${1:-}" == "${2:-}" ]]; then
+    echo "${1:-${2:-}}"
+  else
+    echo "${1:-1}-${2:-?}"
+  fi
+}
+
+# count_audio_tracks <file> — number of audio streams in the container.
+count_audio_tracks() {
+  ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "$1" | wc -l
 }

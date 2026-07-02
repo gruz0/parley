@@ -71,15 +71,16 @@ Because speakers are labeled, the AI actually knows who said what — so "summar
 
 You could — Parley _is_ built on [WhisperX](https://github.com/m-bain/whisperX), which already gives you transcription, diarization, and a command line. Parley is the thin workflow layer on top that turns "the library exists" into "I have a clean, named transcript in a folder":
 
-|                                     | Raw WhisperX         | **Parley**               |
-| ----------------------------------- | -------------------- | ------------------------ |
-| Transcription + speaker diarization | ✅                   | ✅ (uses WhisperX)       |
-| One command                         | ✅ `whisperx …`      | ✅ `make transcribe`     |
-| Sensible defaults baked in          | ❌ (pass every flag) | ✅ (model, VRAM, quiet)  |
-| Real names in the transcript        | ❌ `SPEAKER_00`      | ✅ `make rename`         |
-| Separate your mic from the guests   | ❌                   | ✅ `make tracks` (OBS)   |
-| One tidy folder per recording       | ❌                   | ✅ `transcripts/<name>/` |
-| Preflight check for your setup      | ❌                   | ✅ `make doctor`         |
+|                                      | Raw WhisperX         | **Parley**                |
+| ------------------------------------ | -------------------- | ------------------------- |
+| Transcription + speaker diarization  | ✅                   | ✅ (uses WhisperX)        |
+| One command                          | ✅ `whisperx …`      | ✅ `make transcribe`      |
+| Sensible defaults baked in           | ❌ (pass every flag) | ✅ (model, VRAM, quiet)   |
+| Auto speaker count + track detection | ❌ (specify counts)  | ✅ (probes the file)      |
+| Real names in the transcript         | ❌ `SPEAKER_00`      | ✅ `make rename`          |
+| Separate your mic from the guests    | ❌                   | ✅ auto (OBS multi-track) |
+| One tidy folder per recording        | ❌                   | ✅ `transcripts/<name>/`  |
+| Preflight check for your setup       | ❌                   | ✅ `make doctor`          |
 
 If you want raw control, reach for WhisperX directly. Parley just encodes the opinions — the flags, the file layout, the renaming, the mic/guest split — so you don't re-derive them every call.
 
@@ -92,14 +93,26 @@ Other local tools solve adjacent problems: [Meetily](https://github.com/Zackriya
 Everything is wrapped in a `Makefile`. Run `make` to see all commands:
 
 ```bash
-make transcribe FILE="~/Videos/Recordings/call.mp4" LANG=pt
-make tracks     FILE="~/Videos/Recordings/call.mkv" LANG=en NAME=Alex
+make transcribe FILE="~/Videos/Recordings/call.mp4" LANG=pt   # auto-detects everything
 make speakers   FILE="call"                                  # preview who's who
 make rename     FILE="call" MAP="SPEAKER_00=Alex SPEAKER_01=Bob"
 make clean                                                   # remove *.bak and *.log
 ```
 
-Options: `LANG=en|pt`, `SPEAKERS='min max'`, `NAME='Your Name'`, `GUESTS='min max'`, `VERBOSE=1`.
+`make transcribe` is all you normally need: it probes the file, uses **per-track mode**
+automatically for OBS multi-track recordings (and single-track diarization otherwise), and
+**auto-detects the number of speakers** — so you don't have to remember either. Pass options only
+to override:
+
+- `LANG=en|pt` — set the language (faster and more accurate than autodetect)
+- `NAME='Your Name'` — label your own mic track in per-track mode
+- `SPEAKERS='min max'` — force an exact headcount instead of auto-detecting (e.g. `SPEAKERS='2 2'`)
+- `GUESTS='min max'` — force per-track mode and pin the guest count (e.g. `GUESTS='1 1'`); see
+  [Per-track mode](#per-track-mode-perfect-me-vs-them-labeling)
+- `VERBOSE=1` — full progress and library warnings
+
+`SPEAKERS` and `GUESTS` are mutually exclusive — one forces single-track diarization, the other
+forces per-track mode.
 
 Output is quiet by default (just stage markers). Prefix any command with `VERBOSE=1` for full progress and library warnings.
 
@@ -264,14 +277,19 @@ If you'd rather skip `make`:
 ```bash
 ./transcribe.sh <video-or-audio-file> [en|pt] [min_speakers] [max_speakers]
 
-./transcribe.sh "~/Videos/Recordings/call.mp4"          # autodetect language, 2–3 speakers
+./transcribe.sh "~/Videos/Recordings/call.mp4"          # auto: detect type + speaker count
 ./transcribe.sh "~/Videos/Recordings/call.mp4" en 2 2   # English, exactly 2 speakers
 ```
+
+With no `min`/`max` speakers, `transcribe.sh` auto-detects the recording: a multi-track OBS file
+(3+ audio streams) is handed to per-track mode, and a single-track file is diarized with the
+speaker count detected automatically. To force per-track mode and pin the guest count, set
+`PARLEY_GUESTS="1 1"`. Set `PARLEY_NAME="Alex"` to label your mic track in per-track mode.
 
 **Tips**
 
 - Pass the language when you know it — faster and more accurate than autodetect.
-- Set `min`/`max` speakers to the real headcount. Exact counts (`2 2`) give the cleanest labels.
+- Leave speakers unset to auto-detect the headcount; set exact counts (`2 2`) when you know it, for the cleanest labels.
 - Works on `.mp4`, `.mkv`, `.wav`, and more — WhisperX only reads the audio.
 
 ## Putting real names on speakers
@@ -288,13 +306,19 @@ make rename FILE="call" MAP="SPEAKER_00=Alex SPEAKER_01=Sam"
 
 ## Per-track mode: perfect "me vs. them" labeling
 
-Diarization already splits speakers from a normal recording. But if you record with OBS **multi-track** — your mic on one track, the call audio on another — Parley can label _you_ with 100% accuracy and only diarize the guests:
+Diarization already splits speakers from a normal recording. But if you record with OBS **multi-track** — your mic on one track, the call audio on another — Parley can label _you_ with 100% accuracy and only diarize the guests. **`make transcribe` switches to this mode automatically** when it sees a multi-track file (3+ audio streams), so normally you don't do anything special:
 
 ```bash
-make tracks FILE="~/Videos/Recordings/call.mkv" NAME="Alex" GUESTS="1 2"
+make transcribe FILE="~/Videos/Recordings/call.mkv" NAME="Alex"
 ```
 
-It transcribes your mic as a single speaker, diarizes the guests into `Guest 1` / `Guest 2`, and merges everything into one timeline-ordered transcript. (Run `make rename` afterward to name the guests.)
+It transcribes your mic as a single speaker, auto-detects and diarizes the guests, and merges everything into one timeline-ordered transcript. (Run `make rename` afterward to name the guests.)
+
+If auto-detection mislabels the guest count (e.g. splits one guest into two), pin it with `GUESTS`, which also forces per-track mode:
+
+```bash
+make transcribe FILE="~/Videos/Recordings/call.mkv" NAME="Alex" GUESTS="1 1"
+```
 
 ### Recording that way in OBS
 
@@ -315,7 +339,7 @@ Never used OBS? Here's the exact configuration I've used for years — two scree
 ![OBS Recording settings — format Matroska, audio tracks 1/2/3 enabled](docs/obs-recording-settings.png)
 
 Result: **Track 1** = full mix (for normal playback), **Track 2** = only you, **Track 3** = only the
-guests. That's exactly what `make tracks` expects (`a:1` = you, `a:2` = guests).
+guests. That's exactly what per-track mode expects (`a:1` = you, `a:2` = guests).
 
 > `.mkv` is used because it survives a crash mid-recording; you can remux to `.mp4` later if needed.
 > `Audio Encoder: (Use stream encoder)` is fine.

@@ -27,7 +27,7 @@ Effort is a rough T-shirt size (S / M / L).
 exact label strings.
 
 **Why.** The two output paths produce different label shapes, and the rename tool silently fits only one
-of them. Per-track (`make tracks`) is a headline feature — its transcripts should be first-class in the
+of them. Per-track mode is a headline feature — its transcripts should be first-class in the
 rename workflow too.
 
 **How.** In the preview block of `rename-speakers.sh`, replace the hardcoded `grep -oE "SPEAKER_[0-9]+"`
@@ -36,7 +36,7 @@ with detection of the bracketed label form `\[([^]]+)\]:` in the `.srt`/`.txt`. 
 substitution on arbitrary keys, so only preview needs changing.
 
 - Files: `rename-speakers.sh`
-- Acceptance: `make speakers FILE="<a make-tracks recording>"` lists `Me`, `Guest 1`, … with sample
+- Acceptance: `make speakers FILE="<a per-track recording>"` lists `Me`, `Guest 1`, … with sample
   lines; existing `SPEAKER_00` behavior unchanged.
 
 ### 2. Make `make doctor` actually check model readiness

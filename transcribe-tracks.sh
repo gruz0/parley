@@ -9,12 +9,14 @@
 # guests track is diarized. Results are merged into one timeline-ordered
 # transcript, so only the remote guests ever need diarizing.
 #
+# Guest count is auto-detected unless you pass guest_min/guest_max.
+#
 # Usage:
 #   ./transcribe-tracks.sh <multitrack-file> [en|pt] [your-name] [guest_min] [guest_max]
 #
 # Examples:
-#   ./transcribe-tracks.sh "~/Videos/Recordings/call.mkv" en "Alex"
-#   ./transcribe-tracks.sh "~/Videos/Recordings/call.mkv" pt "Alex" 1 2
+#   ./transcribe-tracks.sh "~/Videos/Recordings/call.mkv" en "Alex"        # auto guest count
+#   ./transcribe-tracks.sh "~/Videos/Recordings/call.mkv" pt "Alex" 1 1    # exactly 1 guest
 
 set -euo pipefail
 
@@ -25,8 +27,8 @@ source "$SCRIPT_DIR/lib.sh"
 INPUT="${1:-}"
 LANG="${2:-}"
 YOU_NAME="${3:-Me}"
-GUEST_MIN="${4:-1}"
-GUEST_MAX="${5:-2}"
+GUEST_MIN="${4:-}" # empty min+max = auto-detect how many guests are on the desktop track
+GUEST_MAX="${5:-}"
 
 if [[ -z "$INPUT" || ! -f "$INPUT" ]]; then
   echo "Usage: $0 <multitrack-file> [en|pt] [your-name] [guest_min] [guest_max]" >&2
@@ -37,7 +39,7 @@ fi
 require_hf_token
 
 # Need at least 3 audio streams (mix + mic + desktop).
-NUM_A=$(ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "$INPUT" | wc -l)
+NUM_A=$(count_audio_tracks "$INPUT")
 if [[ "$NUM_A" -lt 3 ]]; then
   echo "ERROR: '$(basename "$INPUT")' has $NUM_A audio track(s); per-track mode needs 3." >&2
   echo "       This looks like a single-track recording — use ./transcribe.sh instead." >&2
@@ -50,10 +52,11 @@ WORK="$OUT_DIR/_tracks"
 mkdir -p "$WORK"
 
 set_lang_args "$LANG"
+set_speaker_args "$GUEST_MIN" "$GUEST_MAX" # empty min+max = auto-detect guest count
 set_quiet_args # quiet by default; VERBOSE=1 for full per-segment output
 
 echo ">> File:     $(basename "$INPUT")"
-echo ">> You:      \"$YOU_NAME\" (track a:1)   Guests: ${GUEST_MIN}-${GUEST_MAX} (track a:2)"
+echo ">> You:      \"$YOU_NAME\" (track a:1)   Guests: $(speaker_label "$GUEST_MIN" "$GUEST_MAX") (track a:2)"
 echo ">> Language: ${LANG:-auto}"
 echo
 
@@ -71,10 +74,10 @@ whisperx "$WORK/you.wav" --model large-v3 "${LANG_ARG[@]}" \
   --compute_type float16 --batch_size 8 "${QUIET_ARGS[@]}" \
   --output_format json --output_dir "$WORK"
 
-echo ">> Transcribing GUESTS track (diarized, ${GUEST_MIN}-${GUEST_MAX} speakers)..."
+echo ">> Transcribing GUESTS track (diarized, $(speaker_label "$GUEST_MIN" "$GUEST_MAX") speakers)..."
 whisperx "$WORK/guests.wav" --model large-v3 "${LANG_ARG[@]}" \
   --diarize --diarize_model "$DIARIZE_MODEL" \
-  --min_speakers "$GUEST_MIN" --max_speakers "$GUEST_MAX" \
+  "${SPEAKER_ARGS[@]}" \
   --hf_token "$HF_TOKEN" \
   --compute_type float16 --batch_size 8 "${QUIET_ARGS[@]}" \
   --output_format json --output_dir "$WORK"
