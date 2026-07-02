@@ -54,9 +54,10 @@ mkdir -p "$WORK"
 set_lang_args "$LANG"
 set_speaker_args "$GUEST_MIN" "$GUEST_MAX" # empty min+max = auto-detect guest count
 set_quiet_args # quiet by default; VERBOSE=1 for full per-segment output
+GUEST_LABEL=$(speaker_label "$GUEST_MIN" "$GUEST_MAX")
 
 echo ">> File:     $(basename "$INPUT")"
-echo ">> You:      \"$YOU_NAME\" (track a:1)   Guests: $(speaker_label "$GUEST_MIN" "$GUEST_MAX") (track a:2)"
+echo ">> You:      \"$YOU_NAME\" (track a:1)   Guests: $GUEST_LABEL (track a:2)"
 echo ">> Language: ${LANG:-auto}"
 echo
 
@@ -74,7 +75,7 @@ whisperx "$WORK/you.wav" --model large-v3 "${LANG_ARG[@]}" \
   --compute_type float16 --batch_size 8 "${QUIET_ARGS[@]}" \
   --output_format json --output_dir "$WORK"
 
-echo ">> Transcribing GUESTS track (diarized, $(speaker_label "$GUEST_MIN" "$GUEST_MAX") speakers)..."
+echo ">> Transcribing GUESTS track (diarized, $GUEST_LABEL speakers)..."
 whisperx "$WORK/guests.wav" --model large-v3 "${LANG_ARG[@]}" \
   --diarize --diarize_model "$DIARIZE_MODEL" \
   "${SPEAKER_ARGS[@]}" \

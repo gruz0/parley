@@ -69,7 +69,7 @@ speaker_label() {
   if [[ -z "${1:-}" && -z "${2:-}" ]]; then
     echo "auto"
   elif [[ "${1:-}" == "${2:-}" ]]; then
-    echo "${1:-${2:-}}"
+    echo "$1" # reached only when both are set and equal, so $1 is the count
   else
     echo "${1:-1}-${2:-?}"
   fi

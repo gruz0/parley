@@ -45,16 +45,16 @@ read -r GUEST_MIN GUEST_MAX _ <<<"${PARLEY_GUESTS:-}"
 
 # SPEAKERS forces single-track diarization; GUESTS forces per-track mode. Both at
 # once is contradictory — the mix can't also be split into separate tracks.
-if [[ ( -n "$MIN_SPK" || -n "$MAX_SPK" ) && ( -n "$GUEST_MIN" || -n "$GUEST_MAX" ) ]]; then
+if [[ -n "$MIN_SPK$MAX_SPK" && -n "$GUEST_MIN$GUEST_MAX" ]]; then
   echo "ERROR: set either SPEAKERS (single-track headcount) or GUESTS (per-track guest count), not both." >&2
   exit 1
 fi
 
 # Hand off to per-track mode when the guest count is pinned, or — with nothing
 # specified — when the file itself is multi-track (mix + mic + desktop).
-if [[ -n "$GUEST_MIN" || -n "$GUEST_MAX" ]]; then
+if [[ -n "$GUEST_MIN$GUEST_MAX" ]]; then
   exec "$SCRIPT_DIR/transcribe-tracks.sh" "$INPUT" "$LANG" "${PARLEY_NAME:-Me}" "$GUEST_MIN" "$GUEST_MAX"
-elif [[ -z "$MIN_SPK" && -z "$MAX_SPK" ]] && [[ "$(count_audio_tracks "$INPUT")" -ge 3 ]]; then
+elif [[ -z "$MIN_SPK$MAX_SPK" ]] && [[ "$(count_audio_tracks "$INPUT")" -ge 3 ]]; then
   echo ">> Auto: multi-track recording detected — switching to per-track mode."
   echo
   exec "$SCRIPT_DIR/transcribe-tracks.sh" "$INPUT" "$LANG" "${PARLEY_NAME:-Me}"

@@ -16,7 +16,7 @@ GUESTS   =
 
 # Transcription language: honor only an explicit command-line `LANG=xx`; ignore the
 # inherited shell locale (and leave $LANG itself untouched for child processes).
-LANGARG := $(if $(filter command line,$(origin LANG)),$(LANG),)
+LANGARG := $(if $(filter command line,$(origin LANG)),$(LANG))
 
 .DEFAULT_GOAL := help
 .PHONY: help setup doctor transcribe speakers rename clean
