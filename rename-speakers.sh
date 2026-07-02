@@ -85,6 +85,13 @@ for f in "${FILES[@]}"; do cp -f "$f" "$f.bak"; done
 echo "Renaming across ${#FILES[@]} file(s) for \"$BASE\":"
 # Collect all substitutions, then apply them in a single sed pass per file.
 # '|' delimiter avoids clashes with names; keys/names won't contain it.
+#
+# Anchor on where a label actually appears, so a short label like the per-track
+# "Me" can't rewrite the same letters inside dialogue ("Me too" -> "Alex too"):
+#   [label]:   subtitle prefix — srt, vtt, and single-track txt
+#   ] label:   per-track txt, e.g. "[00:00:01] Me: ..."
+# SPEAKER_NN also appears bare in the JSON ("speaker": "SPEAKER_00") and never
+# inside dialogue, so for those a plain substitution is safe and covers the format.
 SED_EXPR=()
 for pair in "$@"; do
   key="${pair%%=*}"; val="${pair#*=}"
@@ -93,7 +100,8 @@ for pair in "$@"; do
     continue
   fi
   echo "  $key -> $val"
-  SED_EXPR+=(-e "s|$key|$val|g")
+  SED_EXPR+=(-e "s|\[$key\]:|[$val]:|g" -e "s|\] $key:|] $val:|g")
+  [[ "$key" =~ ^SPEAKER_[0-9]+$ ]] && SED_EXPR+=(-e "s|$key|$val|g")
 done
 if [[ ${#SED_EXPR[@]} -gt 0 ]]; then
   for f in "${FILES[@]}"; do sed -i "${SED_EXPR[@]}" "$f"; done
