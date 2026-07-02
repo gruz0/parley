@@ -11,11 +11,12 @@ a thin wrapper of Bash scripts + one small Python file around
 
 ## Layout
 
-- `transcribe.sh` — single-track recording → transcript
+- `transcribe.sh` — recording → transcript; auto-detects single- vs multi-track (dispatches to
+  `transcribe-tracks.sh` for the latter) and auto-detects the speaker count unless one is given
 - `transcribe-tracks.sh` — OBS multi-track recording → per-track transcript
 - `rename-speakers.sh` — replace `SPEAKER_00` with real names across all formats
 - `merge_tracks.py` — merge per-track JSON into one timeline (used by `transcribe-tracks.sh`)
-- `lib.sh` — shared helpers sourced by the scripts (`.env`/token load, quiet + language args, `VENV`/`DIARIZE_MODEL` defaults)
+- `lib.sh` — shared helpers sourced by the scripts (`.env`/token load, quiet + language + speaker args, audio-track count, `VENV`/`DIARIZE_MODEL` defaults)
 - `doctor.sh` / `setup.sh` — preflight check / one-time install
 - `Makefile` — user-facing commands (`make help`)
 
